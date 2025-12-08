@@ -5,9 +5,18 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "node examples/basic-demo/main.js"
+    "dev": "serve .",
+    "start": "cd examples/basic-demo && http-server"
   },
-  "keywords": ["game", "pixel", "engine", "canvas"],
+  "keywords": [
+    "game",
+    "pixel",
+    "engine",
+    "canvas"
+  ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.5"
+  }
 }
