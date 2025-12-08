@@ -1,0 +1,13 @@
+{
+  "name": "tiny-pixel-engine",
+  "version": "0.0.1",
+  "description": "A lightweight pixel-art game engine for the web.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node examples/basic-demo/main.js"
+  },
+  "keywords": ["game", "pixel", "engine", "canvas"],
+  "author": "Your Name",
+  "license": "MIT"
+}
