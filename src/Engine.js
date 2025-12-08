@@ -3,22 +3,50 @@ export class Engine {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
 
-    // Virtual resolution
+    // Virtual game resolution
     this.width = width;
     this.height = height;
 
-    // Background colour
+    // Background color
     this.background = background;
 
-    // Game loop state
-    this.running = false;
-    this.lastTime = 0;
+    // Draw scale (computed)
+    this.scale = 1;
 
-    // Scene management
+    // Scene system
     this.scenes = new Map();
     this.currentScene = null;
 
-    // Canvas setup (we’ll flesh this out later)
+    // Loop state
+    this.running = false;
+    this.lastTime = 0;
+
+    // Initial setup
+    this.computeScale();
+  }
+
+  computeScale() {
+    // CSS size of canvas (not real pixel buffer)
+    const rect = this.canvas.getBoundingClientRect();
+    const cssWidth = rect.width;
+    const cssHeight = rect.height;
+
+    // Calculate how much we can scale virtual pixels
+    const scaleX = cssWidth / this.width;
+    const scaleY = cssHeight / this.height;
+
+    // Integer scale to keep pixel art crisp
+    this.scale = Math.floor(Math.min(scaleX, scaleY)) || 1;
+
+    // Compute actual physical resolution
+    this.canvasWidth = this.width * this.scale;
+    this.canvasHeight = this.height * this.scale;
+
+    // Set canvas internal buffer size
+    this.canvas.width = this.canvasWidth;
+    this.canvas.height = this.canvasHeight;
+
+    // Ensure pixel sharpness
     this.ctx.imageSmoothingEnabled = false;
   }
 
@@ -38,6 +66,9 @@ export class Engine {
     const dt = timestamp - this.lastTime;
     this.lastTime = timestamp;
 
+    // Allow responsive scaling
+    this.computeScale();
+
     this.update(dt);
     this.draw();
 
@@ -53,12 +84,12 @@ export class Engine {
   draw() {
     const ctx = this.ctx;
 
-    // Clear screen
+    // Clear canvas
     ctx.fillStyle = this.background;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
     if (this.currentScene && this.currentScene.draw) {
-      this.currentScene.draw(ctx);
+      this.currentScene.draw(ctx, this.scale);
     }
   }
 
