@@ -4,17 +4,29 @@ import {
   SpriteSheet,
   SpriteAnimation,
   Entity,
-  Keyboard
+  Keyboard,
 } from "../../src/index.js";
 
 const canvas = document.querySelector("#game");
 
-// Load a sprite sheet
-const spriteImage = new Image();
-spriteImage.src = "/examples/basic-demo/assets/idle_animation.png";
+// Helper to load images easily
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+  });
+}
 
-spriteImage.onload = () => {
-  console.log("Sprite sheet loaded:", spriteImage.width, spriteImage.height);
+// Load BOTH animations
+Promise.all([
+  loadImage("/examples/basic-demo/assets/idle_animation.png"),
+  loadImage("/examples/basic-demo/assets/walk_animation.png")
+]).then(([idleImage, walkImage]) => {
+
+  console.log("Idle sheet loaded:", idleImage.width, idleImage.height);
+  console.log("Walk sheet loaded:", walkImage.width, walkImage.height);
 
   const engine = new Engine({
     canvas,
@@ -26,24 +38,39 @@ spriteImage.onload = () => {
   const frameWidth = 16;
   const frameHeight = 16;
 
-  const sheet = new SpriteSheet({
-    image: spriteImage,
+  // Create two SpriteSheets
+  const idleSheet = new SpriteSheet({
+    image: idleImage,
     frameWidth,
     frameHeight,
   });
 
+  const walkSheet = new SpriteSheet({
+    image: walkImage,
+    frameWidth,
+    frameHeight,
+  });
+
+  // Create two SpriteAnimations
   const idleAnim = new SpriteAnimation({
-    spriteSheet: sheet,
+    spriteSheet: idleSheet,
     frames: [0, 1, 2, 3, 4, 5, 6, 7],
     frameDuration: 140,
     loop: true,
   });
 
-  // Create an Entity that uses the idle animation
+  const walkAnim = new SpriteAnimation({
+    spriteSheet: walkSheet,
+    frames: [0, 1, 2, 3, 4, 5, 6, 7],
+    frameDuration: 70,
+    loop: true,
+  });
+
+  // Create hero entity
   const hero = new Entity({
     x: 20,
     y: 20,
-    animation: idleAnim,
+    animation: idleAnim, // starts idle
   });
 
   const keyboard = new Keyboard();
@@ -58,34 +85,28 @@ spriteImage.onload = () => {
     update(dt) {
       this.time += dt;
 
-      // --- Movement based on keyboard input ---
-      const speed = 40; // virtual pixels per second
-
-      // Convert dt (ms) to seconds
+      const speed = 40;
       const dtSeconds = dt / 1000;
 
+      // Reset velocity
+      this.hero.vx = 0;
+
+      // Input
       if (keyboard.isDown("ArrowLeft") || keyboard.isDown("a")) {
-        this.hero.x -= speed * dtSeconds;
+        this.hero.vx = -speed;
       }
       if (keyboard.isDown("ArrowRight") || keyboard.isDown("d")) {
-        this.hero.x += speed * dtSeconds;
-      }
-      if (keyboard.isDown("ArrowUp") || keyboard.isDown("w")) {
-        this.hero.y -= speed * dtSeconds;
-      }
-      if (keyboard.isDown("ArrowDown") || keyboard.isDown("s")) {
-        this.hero.y += speed * dtSeconds;
+        this.hero.vx = speed;
       }
 
-      // Simple bobbing position adjustment:
-      const t = this.time / 1000;
-      const amplitude = 0;
-      const bob = Math.sin(t * 2) * amplitude;
+      // 🔹 Animation switching
+      if (this.hero.vx !== 0) {
+        this.hero.animation = walkAnim;
+      } else {
+        this.hero.animation = idleAnim;
+      }
 
-      // Adjust hero's y around a base value
-      this.hero.y = 20 + bob;
-
-      // Let the entity (and its animation) update
+      // Update entity (applies velocity + animation)
       this.hero.update(dt);
     }
 
@@ -98,8 +119,7 @@ spriteImage.onload = () => {
   engine.addScene("sprite", scene);
   engine.setScene("sprite");
   engine.start();
-};
 
-spriteImage.onerror = (e) => {
-  console.error("Failed to load sprite sheet", e);
-};
+}).catch((err) => {
+  console.error("Failed to load one of the spritesheets", err);
+});
