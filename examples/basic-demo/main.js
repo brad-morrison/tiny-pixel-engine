@@ -1,16 +1,19 @@
-import { Engine, Scene, Sprite } from "../../src/index.js";
+import {
+  Engine,
+  Scene,
+  SpriteSheet,
+  SpriteAnimation,
+} from "../../src/index.js";
 
 const canvas = document.querySelector("#game");
 
-// 1) Create the image
+// Load a sprite sheet instead of a single frame image
 const spriteImage = new Image();
-spriteImage.src = "/examples/basic-demo/assets/idle.png";
+spriteImage.src = "/examples/basic-demo/assets/idle_animation.png";
 
-// 2) When it's loaded, start the engine
 spriteImage.onload = () => {
-  console.log("Sprite loaded:", spriteImage.width, spriteImage.height);
+  console.log("Sprite sheet loaded:", spriteImage.width, spriteImage.height);
 
-  // Create engine
   const engine = new Engine({
     canvas,
     width: 160,
@@ -18,23 +21,44 @@ spriteImage.onload = () => {
     background: "#222",
   });
 
-  // Create a Sprite object from the image.
-  // For now we assume the whole image is the sprite.
-  const heroSprite = new Sprite({
+  // Suppose the sheet is 8 frames of 16x16 in a row (128x16)
+  const frameWidth = 16;
+  const frameHeight = 16;
+
+  const sheet = new SpriteSheet({
     image: spriteImage,
-    width: spriteImage.width,
-    height: spriteImage.height,
+    frameWidth,
+    frameHeight,
   });
 
-  // Define a simple Scene that draws the sprite
+  // Animation: frames [0,1,2,3,4,5,6,7], 120ms per frame
+  const idleAnim = new SpriteAnimation({
+    spriteSheet: sheet,
+    frames: [0, 1, 2, 3, 4, 5, 6, 7],
+    frameDuration: 140,
+    loop: true,
+  });
+
   class SpriteScene extends Scene {
+    constructor() {
+      super();
+      this.time = 0;
+      this.x = 20;
+      this.yBase = 20;
+    }
+
     update(dt) {
-      // nothing yet
+      this.time += dt;
+      idleAnim.update(dt);
     }
 
     draw(ctx, scale) {
-      // Let's draw the sprite at virtual position (20, 20)
-      heroSprite.draw(ctx, scale, 20, 20);
+      const t = this.time / 1000;
+      const amplitude = 2;
+      const bob = Math.sin(t * 2) * amplitude;
+      const y = this.yBase + bob;
+
+      idleAnim.draw(ctx, scale, this.x, y);
     }
   }
 
@@ -45,5 +69,5 @@ spriteImage.onload = () => {
 };
 
 spriteImage.onerror = (e) => {
-  console.error("Failed to load sprite image", e);
+  console.error("Failed to load sprite sheet", e);
 };
