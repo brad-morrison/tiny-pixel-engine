@@ -18,11 +18,13 @@
 
 import { Scene } from "../../src/index.js";
 import { HeroController } from "./HeroController.js";
+import { HudOverlay } from "./HudOverlay.js";
 
 export class HeroScene extends Scene {
   constructor(hero, heroAnimations) {
     super();
     this.heroController = new HeroController(hero, heroAnimations);
+    this.hud = new HudOverlay();
   }
 
   update(dt) {
@@ -31,5 +33,6 @@ export class HeroScene extends Scene {
 
   draw(ctx, scale) {
     this.heroController.draw(ctx, scale);
+    this.hud.draw(ctx, scale);
   }
 }
