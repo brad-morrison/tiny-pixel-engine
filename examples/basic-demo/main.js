@@ -92,11 +92,14 @@ Promise.all([
       this.hero.vx = 0;
 
       // Input
+      // Move + set facing
       if (keyboard.isDown("ArrowLeft") || keyboard.isDown("a")) {
         this.hero.vx = -speed;
+        this.hero.facing = -1;          // 👈 NEW
       }
       if (keyboard.isDown("ArrowRight") || keyboard.isDown("d")) {
         this.hero.vx = speed;
+        this.hero.facing = 1;           // 👈 NEW
       }
 
       // 🔹 Animation switching

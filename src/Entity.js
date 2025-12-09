@@ -1,16 +1,17 @@
 export class Entity {
-  constructor({ x = 0, y = 0, animation = null }) {
+  constructor({ x = 0, y = 0, animation = null, facing = 1 }) {
     this.x = x;
     this.y = y;
     this.animation = animation;
 
-    // Optional: extra state later (velocity, etc.)
     this.vx = 0;
     this.vy = 0;
+
+    // 1 = facing right, -1 = facing left
+    this.facing = facing;
   }
 
   update(dt) {
-    // Basic movement (if you want to use velocity later)
     this.x += this.vx * (dt / 1000);
     this.y += this.vy * (dt / 1000);
 
@@ -21,7 +22,8 @@ export class Entity {
 
   draw(ctx, scale) {
     if (this.animation && this.animation.draw) {
-      this.animation.draw(ctx, scale, this.x, this.y);
+      const flipX = this.facing < 0;      // 👈 NEW
+      this.animation.draw(ctx, scale, this.x, this.y, { flipX });
     }
   }
 }

@@ -25,22 +25,50 @@ export class SpriteAnimation {
     this.currentFrameIndex = Math.floor(framePos / this.frameDuration);
   }
 
-  draw(ctx, scale, x, y) {
+    draw(ctx, scale, x, y, options = {}) {
+    const { flipX = false } = options;
+
     const frameId = this.frames[this.currentFrameIndex];
     const rect = this.spriteSheet.getFrameRect(frameId);
+    const image = this.spriteSheet.image;
 
+    ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    ctx.drawImage(
-      this.spriteSheet.image,
-      rect.sx,
-      rect.sy,
-      rect.sw,
-      rect.sh,
-      x * scale,
-      y * scale,
-      rect.sw * scale,
-      rect.sh * scale
-    );
+    if (flipX) {
+      // Flip around the sprite's left edge, so logical x,y stays the same.
+      // We move the origin to (x + width, y), then scale X by -1.
+      const destWidth = rect.sw * scale;
+      const destHeight = rect.sh * scale;
+
+      ctx.translate((x * scale) + destWidth, y * scale);
+      ctx.scale(-1, 1);
+
+      ctx.drawImage(
+        image,
+        rect.sx,
+        rect.sy,
+        rect.sw,
+        rect.sh,
+        0,
+        0,
+        destWidth,
+        destHeight
+      );
+    } else {
+      ctx.drawImage(
+        image,
+        rect.sx,
+        rect.sy,
+        rect.sw,
+        rect.sh,
+        x * scale,
+        y * scale,
+        rect.sw * scale,
+        rect.sh * scale
+      );
+    }
+
+    ctx.restore();
   }
 }
