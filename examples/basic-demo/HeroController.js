@@ -14,7 +14,7 @@
  * ------------------------------------------------
  */
 
-import { Keyboard } from "../../src/index.js";
+import { Keyboard, globalEventBus } from "../../src/index.js";
 
 export class HeroController {
   constructor(hero, heroAnimations) {
@@ -24,6 +24,9 @@ export class HeroController {
 
     // Movement settings
     this.speed = 40; // virtual pixels per second
+
+    // track animation state for events
+    this.currentState = "idle";
   }
 
   update(dt) {
@@ -41,15 +44,7 @@ export class HeroController {
       this.hero.vx = this.speed;
       this.hero.facing = 1;
     }
-
-    // (Optional) vertical controls if you want them later:
-    // if (this.keyboard.isDown("ArrowUp") || this.keyboard.isDown("w")) {
-    //   this.hero.vy = -this.speed;
-    // }
-    // if (this.keyboard.isDown("ArrowDown") || this.keyboard.isDown("s")) {
-    //   this.hero.vy = this.speed;
-    // }
-
+    
     // ---- Movement -> animation state ----
     let state = "idle";
 
@@ -61,9 +56,16 @@ export class HeroController {
     state = "sleep";
     }
 
-    this.heroAnimations.setState(state);
+    // Emit events on state change
+    if (state !== this.currentState) {
+      globalEventBus.emit("hero:state-changed", {
+        prev: this.currentState,
+        next: state,
+      });
+      this.currentState = state;
+    }
 
-    // Let the entity handle position + animation update
+    this.heroAnimations.setState(state);
     this.hero.update(dt);
   }
 

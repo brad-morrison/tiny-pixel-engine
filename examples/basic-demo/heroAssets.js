@@ -29,11 +29,16 @@ import {
 
 // This function prepares everything related to the hero
 export async function createHero() {
-  const [idleImage, walkImage, musicImage, sleepImage] = await Promise.all([
-    loadImage("/examples/basic-demo/assets/idle_animation.png"),
-    loadImage("/examples/basic-demo/assets/walk_animation.png"),
-    loadImage("/examples/basic-demo/assets/music_animation.png"),
-    loadImage("/examples/basic-demo/assets/sleep_animation.png"),
+  const [
+    idleImage,
+    walkImage,
+    musicImage,
+    sleepImage,
+  ] = await assetLoader.loadImages([
+    "/examples/basic-demo/assets/idle_animation.png",
+    "/examples/basic-demo/assets/walk_animation.png",
+    "/examples/basic-demo/assets/music_animation.png",
+    "/examples/basic-demo/assets/sleep_animation.png",
   ]);
 
   const frameWidth = 16;
