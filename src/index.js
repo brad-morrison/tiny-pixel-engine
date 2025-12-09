@@ -5,3 +5,4 @@ export { SpriteSheet } from './SpriteSheet.js';
 export { SpriteAnimation } from './SpriteAnimation.js';
 export { Entity } from './Entity.js';
 export { Keyboard } from './Keyboard.js';
+export { AnimationController } from './AnimationController.js';
