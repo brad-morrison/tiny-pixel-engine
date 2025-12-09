@@ -23,17 +23,9 @@ import {
   SpriteAnimation,
   Entity,
   AnimationController,
+  assetLoader,
 } from "../../src/index.js";
 
-// Small helper to load an image
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-  });
-}
 
 // This function prepares everything related to the hero
 export async function createHero() {

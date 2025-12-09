@@ -6,3 +6,4 @@ export { SpriteAnimation } from './SpriteAnimation.js';
 export { Entity } from './Entity.js';
 export { Keyboard } from './Keyboard.js';
 export { AnimationController } from './AnimationController.js';
+export { assetLoader, AssetLoader } from "./AssetLoader.js";
