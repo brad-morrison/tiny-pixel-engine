@@ -1,4 +1,4 @@
-import { Engine, Scene } from "../../src/index.js";
+import { Engine, Scene, Sprite } from "../../src/index.js";
 
 const canvas = document.querySelector("#game");
 
@@ -18,6 +18,14 @@ spriteImage.onload = () => {
     background: "#222",
   });
 
+  // Create a Sprite object from the image.
+  // For now we assume the whole image is the sprite.
+  const heroSprite = new Sprite({
+    image: spriteImage,
+    width: spriteImage.width,
+    height: spriteImage.height,
+  });
+
   // Define a simple Scene that draws the sprite
   class SpriteScene extends Scene {
     update(dt) {
@@ -26,23 +34,7 @@ spriteImage.onload = () => {
 
     draw(ctx, scale) {
       // Let's draw the sprite at virtual position (20, 20)
-      const x = 20;
-      const y = 20;
-
-      // We'll assume spriteImage is 16x16 for now
-      const spriteWidth = spriteImage.width;
-      const spriteHeight = spriteImage.height;
-
-      ctx.imageSmoothingEnabled = false;
-
-      ctx.drawImage(
-        spriteImage,
-        0, 0,                    // source x, y (top-left of the image)
-        spriteWidth, spriteHeight, // source width/height
-        x * scale, y * scale,      // destination x, y (scaled)
-        spriteWidth * scale,      // destination width
-        spriteHeight * scale      // destination height
-      );
+      heroSprite.draw(ctx, scale, 20, 20);
     }
   }
 
