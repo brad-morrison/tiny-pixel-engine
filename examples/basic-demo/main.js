@@ -3,11 +3,12 @@ import {
   Scene,
   SpriteSheet,
   SpriteAnimation,
+  Entity,
 } from "../../src/index.js";
 
 const canvas = document.querySelector("#game");
 
-// Load a sprite sheet instead of a single frame image
+// Load a sprite sheet
 const spriteImage = new Image();
 spriteImage.src = "/examples/basic-demo/assets/idle_animation.png";
 
@@ -21,7 +22,6 @@ spriteImage.onload = () => {
     background: "#222",
   });
 
-  // Suppose the sheet is 8 frames of 16x16 in a row (128x16)
   const frameWidth = 16;
   const frameHeight = 16;
 
@@ -31,34 +31,44 @@ spriteImage.onload = () => {
     frameHeight,
   });
 
-  // Animation: frames [0,1,2,3,4,5,6,7], 120ms per frame
   const idleAnim = new SpriteAnimation({
     spriteSheet: sheet,
-    frames: [0, 1, 2, 3, 4, 5, 6, 7],
+    frames: [0, 1, 2, 3],
     frameDuration: 140,
     loop: true,
+  });
+
+  // Create an Entity that uses the idle animation
+  const hero = new Entity({
+    x: 20,
+    y: 20,
+    animation: idleAnim,
   });
 
   class SpriteScene extends Scene {
     constructor() {
       super();
       this.time = 0;
-      this.x = 20;
-      this.yBase = 20;
+      this.hero = hero;
     }
 
     update(dt) {
       this.time += dt;
-      idleAnim.update(dt);
+
+      // Simple bobbing position adjustment:
+      const t = this.time / 1000;
+      const amplitude = 0;
+      const bob = Math.sin(t * 2) * amplitude;
+
+      // Adjust hero's y around a base value
+      this.hero.y = 20 + bob;
+
+      // Let the entity (and its animation) update
+      this.hero.update(dt);
     }
 
     draw(ctx, scale) {
-      const t = this.time / 1000;
-      const amplitude = 2;
-      const bob = Math.sin(t * 2) * amplitude;
-      const y = this.yBase + bob;
-
-      idleAnim.draw(ctx, scale, this.x, y);
+      this.hero.draw(ctx, scale);
     }
   }
 
