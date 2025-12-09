@@ -6,7 +6,6 @@
  *   • Reads keyboard input
  *   • Sets hero velocity and facing direction
  *   • Chooses the current animation state
- *     ("idle" vs "walk")
  *   • Updates the hero entity each frame
  *
  * This keeps input and movement behaviour separate
@@ -52,11 +51,17 @@ export class HeroController {
     // }
 
     // ---- Movement -> animation state ----
+    let state = "idle";
+
     if (this.hero.vx !== 0 || this.hero.vy !== 0) {
-      this.heroAnimations.setState("walk");
-    } else {
-      this.heroAnimations.setState("idle");
+    state = "walk";
+    } else if (this.keyboard.isDown("m")) {
+    state = "listenToMusic";
+    } else if (this.keyboard.isDown("s")) {
+    state = "sleep";
     }
+
+    this.heroAnimations.setState(state);
 
     // Let the entity handle position + animation update
     this.hero.update(dt);
