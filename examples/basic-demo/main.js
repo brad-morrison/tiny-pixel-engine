@@ -4,6 +4,7 @@ import {
   SpriteSheet,
   SpriteAnimation,
   Entity,
+  Keyboard
 } from "../../src/index.js";
 
 const canvas = document.querySelector("#game");
@@ -33,7 +34,7 @@ spriteImage.onload = () => {
 
   const idleAnim = new SpriteAnimation({
     spriteSheet: sheet,
-    frames: [0, 1, 2, 3],
+    frames: [0, 1, 2, 3, 4, 5, 6, 7],
     frameDuration: 140,
     loop: true,
   });
@@ -45,6 +46,8 @@ spriteImage.onload = () => {
     animation: idleAnim,
   });
 
+  const keyboard = new Keyboard();
+
   class SpriteScene extends Scene {
     constructor() {
       super();
@@ -54,6 +57,25 @@ spriteImage.onload = () => {
 
     update(dt) {
       this.time += dt;
+
+      // --- Movement based on keyboard input ---
+      const speed = 40; // virtual pixels per second
+
+      // Convert dt (ms) to seconds
+      const dtSeconds = dt / 1000;
+
+      if (keyboard.isDown("ArrowLeft") || keyboard.isDown("a")) {
+        this.hero.x -= speed * dtSeconds;
+      }
+      if (keyboard.isDown("ArrowRight") || keyboard.isDown("d")) {
+        this.hero.x += speed * dtSeconds;
+      }
+      if (keyboard.isDown("ArrowUp") || keyboard.isDown("w")) {
+        this.hero.y -= speed * dtSeconds;
+      }
+      if (keyboard.isDown("ArrowDown") || keyboard.isDown("s")) {
+        this.hero.y += speed * dtSeconds;
+      }
 
       // Simple bobbing position adjustment:
       const t = this.time / 1000;
