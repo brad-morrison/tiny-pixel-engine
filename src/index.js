@@ -8,3 +8,4 @@ export { Keyboard } from './Keyboard.js';
 export { AnimationController } from './AnimationController.js';
 export { assetLoader, AssetLoader } from "./AssetLoader.js";
 export { EventBus, globalEventBus } from "./EventBus.js";
+export { Camera } from './Camera.js';
