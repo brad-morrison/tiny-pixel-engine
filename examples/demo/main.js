@@ -25,13 +25,17 @@ import { AssetRegistry } from "./AssetRegistry.js";
     walkSheetImage,
     musicSheetImage,
     sleepSheetImage,
-    pineTreeImage
+    pineTreeImage,
+    statusFrameImage,
+    statusBlockImage,
   ] = await assetLoader.loadImages([
     "/examples/demo/assets/idle_animation.png",
     "/examples/demo/assets/walk.png",
     "/examples/demo/assets/music_loud.png",
     "/examples/demo/assets/sleep.png",
     "/examples/demo/assets/tree.png",
+    "/examples/demo/assets/status_frame.png",
+    "/examples/demo/assets/status_block.png",
   ]);
 
   // Store them in a central place for the demo
@@ -45,6 +49,12 @@ import { AssetRegistry } from "./AssetRegistry.js";
   // Store the pine tree separately
   AssetRegistry.store("pineTree", {
     image: pineTreeImage,
+  });
+
+  // NEW: UI assets
+  AssetRegistry.store("petStatusUi", {
+    frameImage: statusFrameImage,
+    blockImage: statusBlockImage,
   });
 
   const engine = new Engine({
