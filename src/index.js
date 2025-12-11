@@ -17,3 +17,4 @@ export { Component } from "./Component.js";
 
 // Components
 export { SpriteRenderer } from "./components/SpriteRenderer.js";
+export { TextLabel } from "./components/TextLabel.js";

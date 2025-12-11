@@ -1,17 +1,18 @@
 // examples/demo/scenes/DemoScene.js
-import { Scene, GameObject } from "../../../src/index.js";
+import { Scene, GameObject, TextLabel } from "../../../src/index.js";
 import { PetPrefab } from "../gameobjects/PetPrefab.js";
 import { PineTreePrefab } from "../gameobjects/PineTreePrefab.js";
 import { PlayerController } from "../components/PlayerController.js";
 import { PetNeeds } from "../components/PetNeeds.js";
 import { PetStatusUI } from "../components/PetStatusUI.js";
+import { AssetRegistry } from "../AssetRegistry.js";
 
 export class DemoScene extends Scene {
   constructor() {
     super();
 
     // Zoom in the world by 2x (try 1.5, 2, 3 etc.)
-    this.camera.zoom = 2;
+    this.camera.zoom = 3;
 
     // 1) Build the Pet from prefab (assets come from AssetRegistry)
     const { pet, animations } = PetPrefab.instantiate({
@@ -54,6 +55,7 @@ export class DemoScene extends Scene {
     );
 
     this.addUIObject(ui);
+
 
     // Optional references
     this.pet = pet;
