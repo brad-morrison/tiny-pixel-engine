@@ -15,6 +15,10 @@ export class Entity {
     this.x += this.vx * (dt / 1000);
     this.y += this.vy * (dt / 1000);
 
+    // Round to nearest pixel for crisp rendering
+    this.x = Math.round(this.x);
+    this.y = Math.round(this.y);
+
     if (this.animation && this.animation.update) {
       this.animation.update(dt);
     }

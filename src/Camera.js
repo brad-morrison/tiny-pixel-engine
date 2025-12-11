@@ -9,9 +9,11 @@ export class Camera {
     worldHeight = Infinity,
     followTarget = null,
     lerp = 1.0, // 1 = snap, <1 = smooth
+    zoom = 1.0, // 1 = normal, >1 = zoomed in, <1 = zoomed out
   } = {}) {
     this.x = x;
     this.y = y;
+    this.zoom = zoom;
 
     this.width = width;
     this.height = height;
@@ -51,5 +53,9 @@ export class Camera {
     // Clamp to world bounds
     this.x = Math.max(0, Math.min(this.x, this.worldWidth - this.width));
     this.y = Math.max(0, Math.min(this.y, this.worldHeight - this.height));
+
+    // Round to nearest pixel for crisp rendering
+    this.x = Math.round(this.x);
+    this.y = Math.round(this.y);
   }
 }

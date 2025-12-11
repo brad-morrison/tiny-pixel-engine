@@ -93,11 +93,21 @@ export class Engine {
     }
   }
 
-  addScene(name, scene) {
+    addScene(name, scene) {
     this.scenes.set(name, scene);
   }
 
   setScene(name) {
-    this.currentScene = this.scenes.get(name) || null;
+    const next = this.scenes.get(name) || null;
+
+    if (this.currentScene && typeof this.currentScene.onExit === "function") {
+      this.currentScene.onExit(this);
+    }
+
+    this.currentScene = next;
+
+    if (this.currentScene && typeof this.currentScene.onEnter === "function") {
+      this.currentScene.onEnter(this);
+    }
   }
 }
