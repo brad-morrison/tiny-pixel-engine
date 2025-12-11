@@ -10,6 +10,9 @@ export class DemoScene extends Scene {
   constructor() {
     super();
 
+    // Zoom in the world by 2x (try 1.5, 2, 3 etc.)
+    this.camera.zoom = 2;
+
     // 1) Build the Pet from prefab (assets come from AssetRegistry)
     const { pet, animations } = PetPrefab.instantiate({
       x: 40,

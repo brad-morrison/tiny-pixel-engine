@@ -17,6 +17,8 @@ export const PineTreePrefab = {
       name: "PineTree",
       x,
       y,
+      originX: 8,  // center horizontally
+      originY: 32, // bottom vertically
     });
 
     // Get the image from AssetRegistry

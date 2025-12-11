@@ -14,6 +14,7 @@ export class Scene {
       x: 0,
       y: 0,
       target: null,
+      zoom: 1, // 1 = normal, 2 = zoomed in 2x, etc.
     };
   }
 
@@ -45,9 +46,14 @@ export class Scene {
       const target = this.camera.target;
       const vw = this.engine.width;
       const vh = this.engine.height;
+      const zoom = this.camera.zoom ?? 1;
 
-      let camX = target.x - vw / 2;
-      let camY = target.y - vh / 2;
+      const halfViewW = vw / (2 * zoom);
+      const halfViewH = vh / (2 * zoom);
+
+      // target.x/y are now the logical origin (center/feet/etc.)
+      const camX = target.x - halfViewW;
+      const camY = target.y - halfViewH;
 
       this.camera.x = camX;
       this.camera.y = camY;
@@ -65,19 +71,30 @@ export class Scene {
   }
 
   draw(ctx, scale) {
-    // World: with camera
+    const zoom = this.camera.zoom ?? 1;
+
+    // World scale = GB scale * zoom factor
+    const worldScale = scale * zoom;
+
+    // --- World layer (affected by camera + zoom) ---
     ctx.save();
-    ctx.translate(-this.camera.x * scale, -this.camera.y * scale);
+
+    // Camera translation in worldScale
+    ctx.translate(-this.camera.x * worldScale, -this.camera.y * worldScale);
 
     for (const obj of this.objects) {
-      if (obj.draw) obj.draw(ctx, scale, this);
+      if (obj.draw) {
+        obj.draw(ctx, worldScale, this);  // 👈 pass worldScale here
+      }
     }
 
     ctx.restore();
 
-    // UI: no camera transform
+    // --- UI layer (no zoom, no camera) ---
     for (const obj of this.uiObjects) {
-      if (obj.draw) obj.draw(ctx, scale, this);
+      if (obj.draw) {
+        obj.draw(ctx, scale, this);       // 👈 UI stays at original scale
+      }
     }
   }
 }

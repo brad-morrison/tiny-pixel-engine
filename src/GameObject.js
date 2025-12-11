@@ -1,16 +1,22 @@
 // src/GameObject.js
 
 export class GameObject {
-  constructor({ name = "GameObject", x = 0, y = 0 } = {}) {
-    // Just identity + transform-ish stuff
+  constructor({
+    name = "GameObject",
+    x = 0,
+    y = 0,
+    originX = 0,
+    originY = 0,
+  } = {}) {
     this.name = name;
     this.x = x;
     this.y = y;
 
-    // Global on/off switch
-    this.active = true;
+    // NEW: origin in sprite pixels (virtual units)
+    this.originX = originX;
+    this.originY = originY;
 
-    // Components attached to this object
+    this.active = true;
     this.components = [];
   }
 

@@ -25,7 +25,8 @@ export const PetPrefab = {
       name: "Pet",
       x,
       y,
-      facing: 1, // 1 = right, -1 = left
+      originX: 8, // center of 16x16
+      originY: 8,
     });
 
     // Pull images from registry
