@@ -17,7 +17,9 @@ import { AssetRegistry } from "./AssetRegistry.js";
     pineTreeImage,
     statusFrameImage,
     statusBlockImage,
-    // ❌ remove fontImage here
+    hungerIconImage,
+    energyIconImage,
+    funIconImage,
   ] = await assetLoader.loadImages([
     "/examples/demo/assets/idle_animation.png",
     "/examples/demo/assets/walk.png",
@@ -26,6 +28,9 @@ import { AssetRegistry } from "./AssetRegistry.js";
     "/examples/demo/assets/pine_tree.png",
     "/examples/demo/assets/status_frame.png",
     "/examples/demo/assets/status_block.png",
+    "/examples/demo/assets/hunger_icon.png",
+    "/examples/demo/assets/sleep_icon.png",
+    "/examples/demo/assets/fun_icon.png",
   ]);
 
   AssetRegistry.store("pet", {
@@ -42,13 +47,16 @@ import { AssetRegistry } from "./AssetRegistry.js";
   AssetRegistry.store("petStatusUi", {
     frameImage: statusFrameImage,
     blockImage: statusBlockImage,
+    hungerIconImage: hungerIconImage,
+    energyIconImage: energyIconImage,
+    funIconImage: funIconImage,
   });
 
   const engine = new Engine({
     canvas,
     width: 160,
     height: 144,
-    background: "#222",
+    background: "#346856",
   });
 
   const demoScene = new DemoScene();

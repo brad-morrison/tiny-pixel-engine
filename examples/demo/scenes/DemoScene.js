@@ -12,7 +12,7 @@ export class DemoScene extends Scene {
     super();
 
     // Zoom in the world by 2x (try 1.5, 2, 3 etc.)
-    this.camera.zoom = 3;
+    this.camera.zoom = 1.5;
 
     // 1) Build the Pet from prefab (assets come from AssetRegistry)
     const { pet, animations } = PetPrefab.instantiate({
@@ -47,9 +47,9 @@ export class DemoScene extends Scene {
 
     ui.addComponent(
       new PetStatusUI(needs, {
-        x: 4,
+        x: 13,
         y: 4,
-        width: 70,
+        width: 28,
         barHeight: 4,
       })
     );

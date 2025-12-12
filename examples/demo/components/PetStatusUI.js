@@ -24,7 +24,7 @@ export class PetStatusUI extends Component {
     this.y = y;
 
     // Get UI images from registry
-    const { frameImage, blockImage } = AssetRegistry.get("petStatusUi");
+    const { frameImage, blockImage, hungerIconImage, energyIconImage, funIconImage } = AssetRegistry.get("petStatusUi");
 
     // Sprites for frame and block
     this.frameSprite = new Sprite({
@@ -42,49 +42,87 @@ export class PetStatusUI extends Component {
         sx: 0,
         sy: 0,
     });
-    }
+
+    this.hungerIconSprite = new Sprite({
+        image: hungerIconImage,
+        width: hungerIconImage.width,
+        height: hungerIconImage.height,
+        sx: 0,
+        sy: 0,
+    });
+
+    this.energyIconSprite = new Sprite({
+        image: energyIconImage,
+        width: energyIconImage.width,
+        height: energyIconImage.height,
+        sx: 0,
+        sy: 0,
+    });
+
+    this.funIconSprite = new Sprite({
+        image: funIconImage,
+        width: funIconImage.width,
+        height: funIconImage.height,
+        sx: 0,
+        sy: 0,
+    });
+    } // constructor
 
   draw(ctx, scale) {
     if (!this.needs) return;
 
-    const baseX = this.x * scale;
-    const baseY = this.y * scale;
+    const baseX = this.x;
+    const baseY = this.y;
 
-    const frameWidth = this.frameSprite.width;    // in pixels
+    const frameWidth = 28;    // in pixels
     const frameHeight = this.frameSprite.height;  // in pixels
-    const blockWidth = this.blockSprite.width;    // e.g. 3px
+    const blockWidth = 4;    // e.g. 3px
     const blockHeight = this.blockSprite.height;
 
     const maxBlocks = Math.floor(frameWidth / blockWidth); // should be 9
-    const rowSpacing = (frameHeight + 4) * scale; // space between bars
+    console.log("maxBlocks:", maxBlocks);
+    const rowSpacing = frameHeight + 4;
 
     ctx.save();
-    ctx.font = `${6 * scale}px monospace`;
-    ctx.fillStyle = "#fff";
+    //ctx.font = `${5 * scale}px monospace`;
+    //ctx.fillStyle = "#fff";
 
     const drawBar = (label, value, rowIndex) => {
-        const y = baseY + rowIndex * rowSpacing;
+    const y = baseY + rowIndex * rowSpacing;
 
-        // Label
-        ctx.fillText(label, baseX, y - 2);
+    // Select icon
+    let iconSprite;
+    if (label === "Hunger") iconSprite = this.hungerIconSprite;
+    else if (label === "Energy") iconSprite = this.energyIconSprite;
+    else if (label === "Boredom") iconSprite = this.funIconSprite;
 
-        // Frame
-        this.frameSprite.draw(ctx, scale, baseX / scale, y / scale);
+    // Icon (vertically centered to frame)
+    if (iconSprite) {
+      const ICON_GAP = 2;
+      const iconX = baseX - iconSprite.width - ICON_GAP;
+      const iconY = y + Math.floor(
+        (frameHeight - iconSprite.height) / 2
+      );
 
-        // How many blocks are filled?
-        const ratio = Math.max(0, Math.min(1, value / 100));
-        const filledBlocks = Math.round(maxBlocks * ratio);
+      iconSprite.draw(ctx, scale, iconX, iconY);
+    }
 
-        const innerOffsetX = 1; // px inside the frame
-        const innerOffsetY = 1; // px inside the frame
+    // Frame
+    this.frameSprite.draw(ctx, scale, baseX, y);
 
-        for (let i = 0; i < filledBlocks; i++) {
-        // Apply offsets AND block positions
-        const blockX = (baseX + (innerOffsetX + i * blockWidth) * scale) / scale;
-        const blockY = (y + innerOffsetY * scale) / scale;
+    // Blocks
+    const ratio = Math.max(0, Math.min(1, value / 100));
+    const filledBlocks = Math.round(maxBlocks * ratio);
 
-        this.blockSprite.draw(ctx, scale, blockX, blockY);
-        }
+    const innerOffsetX = 2;
+    const innerOffsetY = 1;
+
+    for (let i = 0; i < filledBlocks; i++) {
+      const blockX = baseX + innerOffsetX + i * blockWidth;
+      const blockY = y + innerOffsetY;
+
+      this.blockSprite.draw(ctx, scale, blockX, blockY);
+    }
   };
 
   drawBar("Hunger", this.needs.hunger, 0);
