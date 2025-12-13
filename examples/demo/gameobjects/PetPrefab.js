@@ -91,6 +91,7 @@ export const PetPrefab = {
     return {
       pet,
       animations: petAnimations,
+      petAnimations, // alias for consistency
     };
   },
 };

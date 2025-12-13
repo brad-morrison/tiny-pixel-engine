@@ -22,7 +22,7 @@ export class PetNeeds extends Component {
 
     // change rates per second
     this.hungerRate = 2;   // gets hungrier
-    this.energyRate = -1;  // slowly loses energy
+    this.energyRate = -10;  // slowly loses energy
     this.boredomRate = 1.5; // gets more bored
   }
 

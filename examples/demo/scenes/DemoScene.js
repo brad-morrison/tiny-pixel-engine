@@ -4,6 +4,7 @@ import { PetPrefab } from "../gameobjects/PetPrefab.js";
 import { PineTreePrefab } from "../gameobjects/PineTreePrefab.js";
 import { PlayerController } from "../components/PlayerController.js";
 import { PetNeeds } from "../components/PetNeeds.js";
+import { PetStateMachine } from "../components/PetStateMachine.js";
 import { PetStatusBar } from "../components/PetStatusBar.js";
 import { AssetRegistry } from "../AssetRegistry.js";
 
@@ -23,10 +24,20 @@ export class DemoScene extends Scene {
     // 2) Attach needs + behaviour
     const needs = pet.addComponent(new PetNeeds());
 
+    // 2a) Create state machine (must be before PlayerController)
+    const stateMachine = pet.addComponent(
+      new PetStateMachine({
+        petNeeds: needs,
+        animationController: animations,
+        sleepEnergyThreshold: 0,
+        wakeEnergyThreshold: 80,
+      })
+    );
+
     pet.addComponent(
       new PlayerController(animations, {
         speed: 40,
-      })
+      }, stateMachine)
     );
 
     // 3) Add pet to world + camera
@@ -67,6 +78,7 @@ export class DemoScene extends Scene {
     this.pet = pet;
     this.petAnimations = animations;
     this.petNeeds = needs;
+    this.petStateMachine = stateMachine;
     this.tree = tree;
     this.tree2 = tree2;
     this.tree3 = tree3;

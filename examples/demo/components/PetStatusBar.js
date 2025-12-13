@@ -68,7 +68,7 @@ export class PetStatusBar extends GameObject {
     if (this.iconSprite) {
       const iconX = baseX - this.iconSprite.width - this.gap;
       const iconY = baseY + Math.floor((this.height - this.iconSprite.height) / 2);
-      this.iconSprite.draw(ctx, scale, iconX, iconY);
+      this.iconSprite.draw(ctx, scale, iconX + 1, iconY + 1);
     }
 
     // Frame background (use sprite if available)
@@ -79,7 +79,7 @@ export class PetStatusBar extends GameObject {
     const frameH = this.frameSprite ? this.frameSprite.height : this.height;
 
     if (this.frameSprite) {
-      this.frameSprite.draw(ctx, scale, frameX - 1, frameY + 1);
+      this.frameSprite.draw(ctx, scale, frameX, frameY + 1);
     } else {
       ctx.fillStyle = this.emptyColor;
       ctx.fillRect(frameX * scale, frameY * scale, frameW * scale, frameH * scale);

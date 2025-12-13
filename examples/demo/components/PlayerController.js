@@ -2,9 +2,10 @@
 import { Component, Keyboard } from "../../../src/index.js";
 
 export class PlayerController extends Component {
-  constructor(animationController, { speed = 40 } = {}) {
+  constructor(animationController, { speed = 40 } = {}, stateMachine = null) {
     super();
     this.anim = animationController;
+    this.stateMachine = stateMachine;
     this.keyboard = new Keyboard();
     this.speed = speed;
     this.currentState = "idle";
@@ -13,6 +14,11 @@ export class PlayerController extends Component {
   update(dt, scene) {
     const e = this.entity;
     const seconds = dt / 1000;
+
+    // If pet is sleeping, don't allow movement or animation changes
+    if (this.stateMachine && this.stateMachine.isAsleep()) {
+      return;
+    }
 
     let vx = 0;
     let vy = 0;
