@@ -4,7 +4,7 @@ import { PetPrefab } from "../gameobjects/PetPrefab.js";
 import { PineTreePrefab } from "../gameobjects/PineTreePrefab.js";
 import { PlayerController } from "../components/PlayerController.js";
 import { PetNeeds } from "../components/PetNeeds.js";
-import { PetStatusUI } from "../components/PetStatusUI.js";
+import { PetStatusBar } from "../components/PetStatusBar.js";
 import { AssetRegistry } from "../AssetRegistry.js";
 
 export class DemoScene extends Scene {
@@ -43,18 +43,24 @@ export class DemoScene extends Scene {
     this.addObject(tree3);
 
     // 5) UI GameObject with status bars
-    const ui = new GameObject({ name: "PetStatusUI" });
+    // Create individual PetStatusBar gameobjects for each need
+    const uiAssets = AssetRegistry.get("petStatusUi");
 
-    ui.addComponent(
-      new PetStatusUI(needs, {
-        x: 13,
-        y: 4,
-        width: 28,
-        barHeight: 4,
-      })
-    );
+    const hungerBar = new PetStatusBar(uiAssets.hungerIconImage, needs.hunger, { x: 13, y: 4, width: 28, height: 8, frameImage: uiAssets.frameImage, blockImage: uiAssets.blockImage });
+    const energyBar = new PetStatusBar(uiAssets.energyIconImage, needs.energy, { x: 13, y: 13, width: 28, height: 8, frameImage: uiAssets.frameImage, blockImage: uiAssets.blockImage });
+    const funBar = new PetStatusBar(uiAssets.funIconImage, needs.boredom, { x: 57, y: 4, width: 28, height: 8, frameImage: uiAssets.frameImage, blockImage: uiAssets.blockImage });
+    const hungerBar2 = new PetStatusBar(uiAssets.hungerIconImage, needs.hunger, { x: 57, y: 13, width: 28, height: 8, frameImage: uiAssets.frameImage, blockImage: uiAssets.blockImage });
 
-    this.addUIObject(ui);
+    this.addUIObject(hungerBar);
+    this.addUIObject(energyBar);
+    this.addUIObject(funBar);
+    this.addUIObject(hungerBar2);
+
+    // Keep references to update externally if needed
+    this.hungerBar = hungerBar;
+    this.energyBar = energyBar;
+    this.funBar = funBar;
+    this.hungerBar2 = hungerBar2;
 
 
     // Optional references
@@ -64,6 +70,16 @@ export class DemoScene extends Scene {
     this.tree = tree;
     this.tree2 = tree2;
     this.tree3 = tree3;
-    this.ui = ui;
+    //this.ui = ui;
+  }
+
+  update(dt) {
+    // let base scene run (camera, objects, ui objects, etc.)
+    super.update(dt);
+
+    // Sync UI bars to needs
+    if (this.hungerBar) this.hungerBar.setValue(this.petNeeds.hunger);
+    if (this.energyBar) this.energyBar.setValue(this.petNeeds.energy);
+    if (this.funBar) this.funBar.setValue(this.petNeeds.boredom);
   }
 }
