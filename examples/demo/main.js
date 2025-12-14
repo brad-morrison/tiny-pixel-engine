@@ -20,6 +20,7 @@ import { AssetRegistry } from "./AssetRegistry.js";
     hungerIconImage,
     energyIconImage,
     funIconImage,
+    eatSheetImage,
   ] = await assetLoader.loadImages([
     "/examples/demo/assets/idle_animation.png",
     "/examples/demo/assets/walk.png",
@@ -31,6 +32,7 @@ import { AssetRegistry } from "./AssetRegistry.js";
     "/examples/demo/assets/hunger_icon.png",
     "/examples/demo/assets/sleep_icon.png",
     "/examples/demo/assets/fun_icon.png",
+    "/examples/demo/assets/eating_animation.png",
   ]);
 
   AssetRegistry.store("pet", {
@@ -38,6 +40,7 @@ import { AssetRegistry } from "./AssetRegistry.js";
     walkImg: walkSheetImage,
     musicImg: musicSheetImage,
     sleepImg: sleepSheetImage,
+    eatImg: eatSheetImage,
   });
 
   AssetRegistry.store("pineTree", {
