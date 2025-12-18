@@ -184,11 +184,10 @@ export class Scene {
 
     ctx.restore();
 
-    // --- UI layer (no zoom, no camera) ---
-      // --- UI layer (also zoomed, but no camera translation) ---
+    // --- UI layer (zoomed like world, but no camera translation) ---
     for (const obj of this.uiObjects) {
       if (obj.draw) {
-        obj.draw(ctx, scale, this);
+        obj.draw(ctx, worldScale, this);
       }
     }
   }

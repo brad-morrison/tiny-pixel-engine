@@ -14,7 +14,7 @@ import { statusPanel } from "../ui/statusPanel.js";
 export class DemoScene extends Scene {
   constructor() {
     super();
-    this.camera.zoom = 1;
+    this.camera.zoom = 1.5;
 
     const { pet, anim } = makePet({ x: 40, y: 40, z: 2 });
 
