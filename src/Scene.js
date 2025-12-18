@@ -173,7 +173,9 @@ export class Scene {
     ctx.save();
 
     // Camera translation in worldScale
-    ctx.translate(-this.camera.x * worldScale, -this.camera.y * worldScale);
+    const camPX = Math.round(this.camera.x * worldScale);
+    const camPY = Math.round(this.camera.y * worldScale);
+    ctx.translate(-camPX, -camPY);
 
     this.objects.sort((a, b) => (a.z ?? 0) - (b.z ?? 0)); // Sort by z-depth
     for (const obj of this.objects) {

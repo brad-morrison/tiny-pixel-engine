@@ -63,6 +63,7 @@ export class WanderAI extends Component {
 
     const s = dt / 1000;
     e.x += this.dir.x * this.speed * s;
+    e.x = Math.round(e.x);
 
     if (this.dir.x !== 0) e.facing = this.dir.x < 0 ? -1 : 1;
 

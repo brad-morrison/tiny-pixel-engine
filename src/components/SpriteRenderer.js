@@ -29,6 +29,7 @@ export class SpriteRenderer extends Component {
 
     // Treat e.x/e.y as the origin point, so the actual top-left
     // for drawing is (x - originX, y - originY).
+    
     const drawX = e.x - originX + this.offsetX;
     const drawY = e.y - originY + this.offsetY;
 
