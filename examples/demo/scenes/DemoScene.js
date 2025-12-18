@@ -1,17 +1,14 @@
 // examples/demo/scenes/DemoScene.js
 import { Scene, GameObject, PointerArea } from "../../../src/index.js";
 import { getAsset } from "../assets.js";
-
 import { Needs } from "../components/Needs.js";
 import { PetSM } from "../components/PetSM.js";
 import { WanderAI } from "../components/WanderAI.js";
 import { ClickToMove } from "../components/ClickToMove.js";
 import { Actions } from "../components/Actions.js";
-
 import { makePet } from "../factories/makePet.js";
 import { makeTree } from "../factories/makeTree.js";
 import { makeFridge } from "../factories/makeFridge.js";
-
 import { statusPanel } from "../ui/statusPanel.js";
 
 export class DemoScene extends Scene {
