@@ -22,7 +22,17 @@ export class ClickToMove extends Component {
   }
 
   setTarget(x) {
-    this.targetX = Math.round(x);
+    let tx = Math.round(x);
+
+    // Clamp the target so it is always reachable
+    if (this.bounds) {
+      const { xMin, xMax } = this.bounds;
+      if (typeof xMin === "number" && typeof xMax === "number") {
+        tx = Math.max(xMin, Math.min(xMax, tx));
+      }
+    }
+
+    this.targetX = tx;
     this.active = true;
     this.waitMs = 0;
   }

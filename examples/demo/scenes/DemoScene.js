@@ -29,7 +29,7 @@ export class DemoScene extends Scene {
         bounds: { xMin: 16, xMax: 144 },
       })
     );
-    
+
     pet.addComponent(
       new WanderAI({
         speed: 25,
@@ -62,5 +62,41 @@ export class DemoScene extends Scene {
     this.addObject(makeFridge({ x: 60, y: 45 }));
 
     this.addUIObject(statusPanel(needs, getAsset));
+  }
+
+  // DEBUG: draw wander bounds
+  draw(ctx, scale) {
+    super.draw(ctx, scale);
+
+    // DEBUG: wander bounds in WORLD space (so it matches actual bounds)
+    const xMin = 16;
+    const xMax = 144;
+
+    const worldScale = scale * (this.camera.zoom || 1);
+
+    ctx.save();
+
+    // apply the SAME camera transform the engine uses for world rendering
+    ctx.translate(
+      -(this.camera.x || 0) * worldScale,
+      -(this.camera.y || 0) * worldScale
+    );
+
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = worldScale;
+
+    // left bound
+    ctx.beginPath();
+    ctx.moveTo(Math.round(xMin * worldScale) + 0.5, 0);
+    ctx.lineTo(Math.round(xMin * worldScale) + 0.5, 144 * worldScale);
+    ctx.stroke();
+
+    // right bound
+    ctx.beginPath();
+    ctx.moveTo(Math.round(xMax * worldScale) + 0.5, 0);
+    ctx.lineTo(Math.round(xMax * worldScale) + 0.5, 144 * worldScale);
+    ctx.stroke();
+
+    ctx.restore();
   }
 }

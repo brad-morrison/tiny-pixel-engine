@@ -78,7 +78,10 @@ export class WanderAI extends Component {
     // If we hit a wall, go idle so it doesn't scrape edges
     if (this.bounds) {
       const hitX = e.x === this.bounds.xMin || e.x === this.bounds.xMax;
-      if (hitX) this.enterIdle();
+      if (hitX) {
+        this.enterIdle();
+        return; // <- IMPORTANT: stop here so we don’t setMoving(true) below
+      }
     }
 
     this.sm?.setMoving(true);
