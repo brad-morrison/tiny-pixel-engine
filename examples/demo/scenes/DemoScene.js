@@ -28,7 +28,7 @@ export class DemoScene extends Scene {
       new ClickToMove({
         speed: 30,
         sm,
-        resumeWanderAfterMs: 5000,
+        resumeWanderAfterMs: 10000,
         bounds: { xMin: 16, xMax: 144 },
       })
     );
