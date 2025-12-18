@@ -216,6 +216,87 @@ class Player extends Component {
   }
 }
 
+// AI for the pet to wander around randomly (X-only, platformer-style)
+class WanderAI extends Component {
+  constructor({ speed = 25, sm = null, bounds = null } = {}) {
+    super();
+    this.speed = speed;
+    this.sm = sm;
+
+    // bounds in world coords: { xMin, xMax } (y ignored)
+    this.bounds = bounds;
+
+    this.mode = "idle"; // "idle" | "walk"
+    this.timeLeft = 0;
+
+    this.dir = { x: 0, y: 0 };
+  }
+
+  rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  pickNewDirection() {
+    // platformer: left/right only
+    this.dir = { x: Math.random() < 0.5 ? -1 : 1, y: 0 };
+  }
+
+  enterIdle() {
+    this.mode = "idle";
+    this.timeLeft = this.rand(3000, 9000);
+    this.dir = { x: 0, y: 0 };
+    this.sm?.setMoving(false);
+  }
+
+  enterWalk() {
+    this.mode = "walk";
+    this.timeLeft = this.rand(600, 2000);
+    this.pickNewDirection();
+    this.sm?.setMoving(true);
+  }
+
+  clampToBounds(e) {
+    if (!this.bounds) return;
+    if (typeof this.bounds.xMin === "number" && typeof this.bounds.xMax === "number") {
+      e.x = Math.max(this.bounds.xMin, Math.min(this.bounds.xMax, e.x));
+    }
+  }
+
+  update(dt) {
+    if (this.sm && !this.sm.canMove()) {
+      this.sm.setMoving(false);
+      return;
+    }
+
+    const e = this.entity;
+
+    // bootstrap
+    if (this.timeLeft <= 0) {
+      this.mode === "idle" ? this.enterWalk() : this.enterIdle();
+    }
+
+    this.timeLeft -= dt;
+
+    if (this.mode !== "walk") return;
+
+    const s = dt / 1000;
+
+    // X-only movement
+    e.x += this.dir.x * this.speed * s;
+
+    if (this.dir.x !== 0) e.facing = this.dir.x < 0 ? -1 : 1;
+
+    // keep within horizontal bounds
+    this.clampToBounds(e);
+
+    // if we hit a wall, bounce to idle so it doesn't scrape edges
+    if (this.bounds && typeof this.bounds.xMin === "number" && typeof this.bounds.xMax === "number") {
+      const hitX = e.x === this.bounds.xMin || e.x === this.bounds.xMax;
+      if (hitX) this.enterIdle();
+    }
+  }
+}
+
 class Actions extends Component {
   constructor(anim, needs, sm, eatAmount = 10) {
     super();
@@ -446,7 +527,8 @@ class Demo extends Scene {
     const needs = pet.addComponent(new Needs());
     const sm = pet.addComponent(new PetSM(needs, anim, 0, 80));
 
-    pet.addComponent(new Player(40, sm));
+    //pet.addComponent(new Player(40, sm));
+    pet.addComponent(new WanderAI({ speed: 25, sm, bounds: { xMin: 16, yMin: 16, xMax: 144, yMax: 128 } }));
     pet.addComponent(new Actions(anim, needs, sm));
 
     this.addObject(pet);
