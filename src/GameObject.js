@@ -39,6 +39,14 @@ export class GameObject {
     return this.components.find((c) => c instanceof ComponentType) || null;
   }
 
+  getComponent(Type) {
+    return this.components.find((c) => c instanceof Type) || null;
+  }
+
+  getComponents(Type) {
+    return this.components.filter((c) => c instanceof Type);
+  }
+
   removeComponent(component) {
     const idx = this.components.indexOf(component);
     if (idx !== -1) {

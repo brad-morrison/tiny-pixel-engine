@@ -23,6 +23,21 @@ export class Engine {
 
     // Initial setup
     this.computeScale();
+
+    // mouse input state
+    this.pointer = {
+      x: 0,
+      y: 0,
+      isDown: false,
+      justDown: false,
+      justUp: false,
+      downX: 0,
+      downY: 0,
+      downTime: 0,
+      upTime: 0,
+    };
+
+    this._bindPointerEvents();
   }
 
   computeScale() {
@@ -48,6 +63,59 @@ export class Engine {
 
     // Ensure pixel sharpness
     this.ctx.imageSmoothingEnabled = false;
+  }
+
+    _bindPointerEvents() {
+    const canvas = this.canvas;
+
+    const toCanvasPixels = (evt) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (evt.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (evt.clientY - rect.top) * (canvas.height / rect.height);
+      return { x, y };
+    };
+
+    const onMove = (evt) => {
+      const p = this.pointer;
+      const pos = toCanvasPixels(evt);
+      p.x = pos.x;
+      p.y = pos.y;
+    };
+
+    const onDown = (evt) => {
+      canvas.setPointerCapture?.(evt.pointerId);
+
+      const p = this.pointer;
+      const pos = toCanvasPixels(evt);
+      p.x = pos.x;
+      p.y = pos.y;
+
+      p.isDown = true;
+      p.justDown = true;
+      p.downX = pos.x;
+      p.downY = pos.y;
+      p.downTime = performance.now();
+    };
+
+    const onUp = (evt) => {
+      const p = this.pointer;
+      const pos = toCanvasPixels(evt);
+      p.x = pos.x;
+      p.y = pos.y;
+
+      p.isDown = false;
+      p.justUp = true;
+      p.upTime = performance.now();
+
+      canvas.releasePointerCapture?.(evt.pointerId);
+    };
+
+    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerdown", onDown);
+    canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("pointercancel", onUp);
+
+    canvas.style.touchAction = "none";
   }
 
   start() {
@@ -79,6 +147,13 @@ export class Engine {
     if (this.currentScene && this.currentScene.update) {
       this.currentScene.update(dt);
     }
+
+    if (this.currentScene && typeof this.currentScene.handlePointer === "function") {
+      this.currentScene.handlePointer(this.pointer, dt);
+    }
+
+    this.pointer.justDown = false;
+    this.pointer.justUp = false;
   }
 
   draw() {

@@ -10,6 +10,7 @@ import {
   Sprite,
   SpriteRenderer,
   Component,
+  PointerArea,
 } from "../../src/index.js";
 
 /* ============================================================================
@@ -18,9 +19,7 @@ import {
  */
 
 const ASSETS = new Map();
-
 const setAsset = (key, value) => ASSETS.set(key, value);
-
 const getAsset = (key) => {
   if (!ASSETS.has(key)) throw new Error(`Missing asset: ${key}`);
   return ASSETS.get(key);
@@ -32,7 +31,6 @@ const getAsset = (key) => {
  */
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
-const clamp100 = (v) => Math.max(0, Math.min(100, v));
 const seconds = (dtMs) => dtMs / 1000;
 
 const key = (keyboard, name) => keyboard.isDown(name);
@@ -45,7 +43,7 @@ const moveInput = (k) => {
 
   return {
     x: (right ? 1 : 0) - (left ? 1 : 0),
-    y: (down ? 0 : 0) - (up ? 0 : 0), // I have disabled vertical movement, to re-add - (down ? 1 : 0) - (up ? 1 : 0) 
+    y: (down ? 0 : 0) - (up ? 0 : 0), // vertical disabled for platformer lane
   };
 };
 
@@ -131,7 +129,7 @@ class Needs extends Component {
   update(dt) {
     const s = dt / 1000;
 
-    // --------- baseline decay (always) ----------
+    // baseline decay
     this._hungerLoseT += s;
     while (this._hungerLoseT >= this.hungerLoseEverySec) {
       this._hungerLoseT -= this.hungerLoseEverySec;
@@ -150,7 +148,7 @@ class Needs extends Component {
       this.loseBlock("happiness");
     }
 
-    // --------- conditional regen ----------
+    // conditional regen
     if (this.isSleeping) {
       this._energyGainT += s;
       while (this._energyGainT >= this.energyGainEverySecWhileSleeping) {
@@ -170,15 +168,83 @@ class Needs extends Component {
 }
 
 /**
+ * ClickToMove (NO SMOOTHING)
+ * - X-only move toward target
+ * - When arrived, waits N ms then releases control (wandering resumes)
+ */
+class ClickToMove extends Component {
+  constructor({
+    speed = 30,
+    sm = null,
+    resumeWanderAfterMs = 5000,
+    bounds = null,
+    arriveEpsilon = 1,
+  } = {}) {
+    super();
+    this.speed = speed;
+    this.sm = sm;
+    this.resumeAfter = resumeWanderAfterMs;
+    this.bounds = bounds;
+    this.arriveEpsilon = arriveEpsilon;
+
+    this.active = false;
+    this.targetX = 0;
+    this.waitMs = 0;
+  }
+
+  setTarget(x) {
+    this.targetX = Math.round(x);
+    this.active = true;
+    this.waitMs = 0;
+  }
+
+  clampToBounds(e) {
+    if (!this.bounds) return;
+    const { xMin, xMax } = this.bounds;
+    if (typeof xMin === "number" && typeof xMax === "number") {
+      e.x = Math.max(xMin, Math.min(xMax, e.x));
+    }
+  }
+
+  update(dt) {
+    if (this.sm && !this.sm.canMove()) {
+      this.sm.setMoving(false);
+      return;
+    }
+    if (!this.active) return;
+
+    const e = this.entity;
+    const s = dt / 1000;
+
+    const dx = this.targetX - e.x;
+    const dist = Math.abs(dx);
+
+    if (dist <= this.arriveEpsilon) {
+      this.sm?.setMoving(false);
+      this.waitMs += dt;
+      if (this.waitMs >= this.resumeAfter) {
+        this.active = false;
+        this.waitMs = 0;
+      }
+      return;
+    }
+
+    const dir = dx < 0 ? -1 : 1;
+    e.facing = dir;
+
+    const step = this.speed * s;
+    e.x += dir * Math.min(step, dist);
+
+    this.clampToBounds(e);
+    this.sm?.setMoving(true);
+  }
+}
+
+/**
  * PetSM = single source of truth for:
  * - current state
  * - animation selection
  * - stat rate tweaks while in a state
- *
- * States:
- * - idle (default)
- * - walk (set by Player while moving)
- * - sleep/music/eat (requested by Actions)
  */
 class PetSM extends Component {
   constructor(needs, anim, sleepThreshold = 0, wakeThreshold = 80) {
@@ -194,54 +260,42 @@ class PetSM extends Component {
   }
 
   request(next) {
-    // next: null | "sleep" | "music" | "eat"
-    this.requestState = next;
+    this.requestState = next; // null | "sleep" | "music" | "eat"
   }
 
   canMove() {
-    // Movement allowed only when not in a requested action state.
     return this.state === "idle" || this.state === "walk";
   }
 
   setState(next) {
     if (this.state === next) return;
     this.state = next;
+
+    // tell Needs which regen should run
     this.needs.setSleeping(next === "sleep");
     this.needs.setListening(next === "music");
-
-    // defaults
-    this.needs.boredomRate = 1.5;
-    this.needs.energyRate = -10;
 
     if (next === "walk") {
       this.anim?.setState("walk");
       return;
     }
-
     if (next === "sleep") {
-      this.needs.energyRate = 5;
       this.anim?.setState("sleep");
       return;
     }
-
     if (next === "music") {
-      this.needs.boredomRate = -8;
       this.anim?.setState("listenToMusic");
       return;
     }
-
     if (next === "eat") {
       this.anim?.setState("eat");
       return;
     }
 
-    // idle
     this.anim?.setState("idle");
   }
 
-  /** Called by Player to indicate locomotion intent */
   setMoving(isMoving) {
-    // Don’t let Player override an action state.
     if (this.requestState) return;
     this.setState(isMoving ? "walk" : "idle");
   }
@@ -249,26 +303,22 @@ class PetSM extends Component {
   update() {
     const e = this.needs.energy;
 
-    // 1) If we have a manual request, that is the state (highest priority)
     if (this.requestState) {
       this.setState(this.requestState);
       return;
     }
 
-    // 2) Auto-sleep (only when idle and no manual requests)
+    // auto-sleep disabled right now
     if (this.state === "idle" && e <= this.sleepT) {
-      //this.setState("sleep");
+      // this.setState("sleep");
       return;
     }
 
-    // Auto-wake
     if (this.state === "sleep" && e >= this.wakeT) {
       this.setState("idle");
       return;
     }
 
-    // 3) If we were in a non-locomotion action (shouldn’t happen without request),
-    // snap back to idle.
     if (this.state === "music" || this.state === "eat") {
       this.setState("idle");
     }
@@ -290,7 +340,6 @@ class Player extends Component {
     const sp = this.speed * seconds(dt);
     const { x, y } = moveInput(this.keyboard);
 
-    // facing (engine uses entity.facing for flip)
     if (x !== 0) e.facing = x < 0 ? -1 : 1;
 
     const moving = x !== 0 || y !== 0;
@@ -304,19 +353,17 @@ class Player extends Component {
   }
 }
 
-// AI for the pet to wander around randomly (X-only, platformer-style)
+// WanderAI (X-only). Pauses when ClickToMove is active.
 class WanderAI extends Component {
-  constructor({ speed = 25, sm = null, bounds = null } = {}) {
+  constructor({ speed = 25, sm = null, bounds = null, clickMover = null } = {}) {
     super();
     this.speed = speed;
     this.sm = sm;
-
-    // bounds in world coords: { xMin, xMax } (y ignored)
-    this.bounds = bounds;
+    this.bounds = bounds; // { xMin, xMax }
+    this.clickMover = clickMover;
 
     this.mode = "idle"; // "idle" | "walk"
     this.timeLeft = 0;
-
     this.dir = { x: 0, y: 0 };
   }
 
@@ -325,7 +372,6 @@ class WanderAI extends Component {
   }
 
   pickNewDirection() {
-    // platformer: left/right only
     this.dir = { x: Math.random() < 0.5 ? -1 : 1, y: 0 };
   }
 
@@ -345,12 +391,15 @@ class WanderAI extends Component {
 
   clampToBounds(e) {
     if (!this.bounds) return;
-    if (typeof this.bounds.xMin === "number" && typeof this.bounds.xMax === "number") {
-      e.x = Math.max(this.bounds.xMin, Math.min(this.bounds.xMax, e.x));
+    const { xMin, xMax } = this.bounds;
+    if (typeof xMin === "number" && typeof xMax === "number") {
+      e.x = Math.max(xMin, Math.min(xMax, e.x));
     }
   }
 
   update(dt) {
+    if (this.clickMover?.active) return;
+
     if (this.sm && !this.sm.canMove()) {
       this.sm.setMoving(false);
       return;
@@ -358,7 +407,6 @@ class WanderAI extends Component {
 
     const e = this.entity;
 
-    // bootstrap
     if (this.timeLeft <= 0) {
       this.mode === "idle" ? this.enterWalk() : this.enterIdle();
     }
@@ -368,17 +416,13 @@ class WanderAI extends Component {
     if (this.mode !== "walk") return;
 
     const s = dt / 1000;
-
-    // X-only movement
     e.x += this.dir.x * this.speed * s;
 
     if (this.dir.x !== 0) e.facing = this.dir.x < 0 ? -1 : 1;
 
-    // keep within horizontal bounds
     this.clampToBounds(e);
 
-    // if we hit a wall, bounce to idle so it doesn't scrape edges
-    if (this.bounds && typeof this.bounds.xMin === "number" && typeof this.bounds.xMax === "number") {
+    if (this.bounds) {
       const hitX = e.x === this.bounds.xMin || e.x === this.bounds.xMax;
       if (hitX) this.enterIdle();
     }
@@ -386,9 +430,9 @@ class WanderAI extends Component {
 }
 
 class Actions extends Component {
-  constructor(anim, needs, sm, eatAmount = 10) {
+  constructor(anim, needs, sm) {
     super();
-    this.anim = anim; // only used to check if eat animation exists + timing
+    this.anim = anim;
     this.needs = needs;
     this.sm = sm;
 
@@ -417,7 +461,7 @@ class Actions extends Component {
     }
     this.heldQ = downQ;
 
-    // Don’t allow eating while sleep/music is active
+    // no eating while sleep/music is active
     if (this.sm.state === "sleep" || this.sm.state === "music") return;
 
     // Eat (E) one-shot (timed)
@@ -452,14 +496,9 @@ class Actions extends Component {
  * ============================================================================
  */
 
-const makeSheet = (image) =>
-  new SpriteSheet({ image, frameWidth: 16, frameHeight: 16 });
+const makeSheet = (image) => new SpriteSheet({ image, frameWidth: 16, frameHeight: 16 });
 
-const makeLoop = (
-  sheet,
-  frameDuration = 120,
-  frames = [0, 1, 2, 3, 4, 5, 6, 7]
-) =>
+const makeLoop = (sheet, frameDuration = 120, frames = [0, 1, 2, 3, 4, 5, 6, 7]) =>
   new SpriteAnimation({
     spriteSheet: sheet,
     frames,
@@ -467,7 +506,7 @@ const makeLoop = (
     loop: true,
   });
 
-const makePet = ({ x = 40, y = 40, z = 1 } = {}) => {
+const makePet = ({ x = 40, y = 40, z } = {}) => {
   const { idleImg, walkImg, musicImg, sleepImg, eatImg } = getAsset("pet");
 
   const pet = new GameObject({
@@ -495,10 +534,7 @@ const makePet = ({ x = 40, y = 40, z = 1 } = {}) => {
     eatImg &&
     new SpriteAnimation({
       spriteSheet: makeSheet(eatImg),
-      frames: Array.from(
-        { length: Math.floor(eatImg.width / 16) },
-        (_, i) => i
-      ),
+      frames: Array.from({ length: Math.floor(eatImg.width / 16) }, (_, i) => i),
       frameDuration: 100,
       loop: false,
     });
@@ -544,14 +580,76 @@ const makeTree = ({ x = 0, y = 0 } = {}) => {
   return tree;
 };
 
+const makeFridge = ({ x = 0, y = 0 } = {}) => {
+  const { image } = getAsset("fridgeAnim");
+
+  const FRAME_W = 37;
+  const FRAME_H = 30;
+
+  const fridge = new GameObject({
+    name: "Fridge",
+    x,
+    y,
+    originX: FRAME_W / 2,
+    originY: FRAME_H,
+  });
+
+  const sheet = new SpriteSheet({
+    image,
+    frameWidth: FRAME_W,
+    frameHeight: FRAME_H,
+  });
+
+  const anim = new AnimationController({
+    animations: {
+      closed: new SpriteAnimation({
+        spriteSheet: sheet,
+        frames: [0],
+        frameDuration: 1000,
+        loop: false,
+      }),
+      open: new SpriteAnimation({
+        spriteSheet: sheet,
+        frames: [0, 1, 2, 3, 4, 5],
+        frameDuration: 80,
+        loop: false,
+      }),
+      close: new SpriteAnimation({
+        spriteSheet: sheet,
+        frames: [5, 4, 3, 2, 1, 0],
+        frameDuration: 40,
+        loop: false,
+      }),
+    },
+    initialState: "closed",
+  });
+
+  fridge.addComponent(new SpriteRenderer({ animation: anim }));
+
+  let isOpen = false;
+  fridge.z = 1;
+
+  fridge.addComponent(
+    new PointerArea({
+      width: FRAME_W,
+      height: FRAME_H,
+      onClick: () => {
+        isOpen = !isOpen;
+        anim.setState(isOpen ? "open" : "close");
+      },
+    })
+  );
+
+  return fridge;
+};
+
 /* ============================================================================
  *  UI (STATUS PANEL)
  * ============================================================================
  */
 
 const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
-  const { frameImage, blockImage, hungerIconImage, energyIconImage, funIconImage } =
-    getAsset("petStatusUi");
+  const { frameImage, blockImage, hungerIconImage, energyIconImage, funIconImage } = getAsset("petStatusUi");
 
   const bars = [
     { icon: hungerIconImage, get: () => needs.hunger, yOffset: 0 },
@@ -559,7 +657,6 @@ const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
     { icon: funIconImage, get: () => needs.happiness, yOffset: spacing * 2 },
   ];
 
-  // Frame internals (virtual pixels inside the UI frame)
   const innerX = 1;
   const innerY = Math.floor((frameImage.height - blockImage.height) / 2);
 
@@ -568,21 +665,18 @@ const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
   const blockStep = blockW;
 
   const maxBlocks = needs.maxBlocks;
-  const gap = 1; // icon -> frame gap in virtual px
+  const gap = 1;
 
   const drawBar = (ctx, scale, { icon, get, yOffset }) => {
     const px = x * scale;
     const py = (y + yOffset) * scale;
 
-    // icon at native size
     ctx.drawImage(icon, px, py, icon.width * scale, icon.height * scale);
 
-    // frame aligned after icon
     const fx = px + (icon.width + gap) * scale;
     const fy = py;
     ctx.drawImage(frameImage, fx, fy, frameImage.width * scale, frameImage.height * scale);
 
-    // blocks
     const filled = Math.max(0, Math.min(maxBlocks, Math.round(get())));
     for (let i = 0; i < filled; i++) {
       const bx = (x + (icon.width + gap) + innerX + i * blockStep) * scale;
@@ -609,14 +703,45 @@ class Demo extends Scene {
     super();
     this.camera.zoom = 1.5;
 
-    const { pet, anim } = makePet({ x: 40, y: 40, z: 1 });
+    const { pet, anim } = makePet({ x: 40, y: 40, z: 2 });
 
     const needs = pet.addComponent(new Needs({ maxBlocks: 7 }));
     const sm = pet.addComponent(new PetSM(needs, anim, 0, 80));
 
-    //pet.addComponent(new Player(40, sm));
-    pet.addComponent(new WanderAI({ speed: 25, sm, bounds: { xMin: 16, yMin: 16, xMax: 144, yMax: 128 } }));
+    // click-to-move
+    const clickMover = pet.addComponent(
+      new ClickToMove({
+        speed: 30,
+        sm,
+        resumeWanderAfterMs: 5000,
+        bounds: { xMin: 16, xMax: 144 },
+      })
+    );
+
+    // wandering (pauses when clickMover.active)
+    pet.addComponent(
+      new WanderAI({
+        speed: 25,
+        sm,
+        bounds: { xMin: 16, xMax: 144 },
+        clickMover,
+      })
+    );
+
     pet.addComponent(new Actions(anim, needs, sm));
+
+    // GROUND click catcher (world size 160x144)
+    const ground = new GameObject({ name: "Ground", x: 0, y: 0, z: -999 });
+    ground.addComponent(
+      new PointerArea({
+        width: 160,
+        height: 144,
+        onClick: ({ worldX }) => {
+          clickMover.setTarget(worldX);
+        },
+      })
+    );
+    this.addObject(ground);
 
     this.addObject(pet);
     this.setCameraTarget(pet);
@@ -624,6 +749,8 @@ class Demo extends Scene {
     this.addObject(makeTree({ x: 60, y: 45 }));
     this.addObject(makeTree({ x: 100, y: 45 }));
     this.addObject(makeTree({ x: 140, y: 45 }));
+
+    this.addObject(makeFridge({ x: 60, y: 45 }));
 
     this.addUIObject(statusPanel(needs));
   }
@@ -650,6 +777,7 @@ class Demo extends Scene {
     "/examples/demo/assets/sleep_icon.png",
     "/examples/demo/assets/fun_icon.png",
     "/examples/demo/assets/pet_eat.png",
+    "/examples/demo/assets/fridge_anim.png",
   ]);
 
   const [
@@ -664,10 +792,12 @@ class Demo extends Scene {
     energyIconImage,
     funIconImage,
     eatImg,
+    fridgeAnim,
   ] = images;
 
   setAsset("pet", { idleImg, walkImg, musicImg, sleepImg, eatImg });
   setAsset("pineTree", { image: treeImg });
+  setAsset("fridgeAnim", { image: fridgeAnim });
   setAsset("petStatusUi", {
     frameImage,
     blockImage,
