@@ -29,7 +29,7 @@ export class DemoScene extends Scene {
         bounds: { xMin: 16, xMax: 144 },
       })
     );
-
+    
     pet.addComponent(
       new WanderAI({
         speed: 25,

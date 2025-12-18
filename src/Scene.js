@@ -173,9 +173,7 @@ export class Scene {
     ctx.save();
 
     // Camera translation in worldScale
-    const camPX = Math.round(this.camera.x * worldScale);
-    const camPY = Math.round(this.camera.y * worldScale);
-    ctx.translate(-camPX, -camPY);
+    ctx.translate(-(this.camera.x || 0) * worldScale, -(this.camera.y || 0) * worldScale);
 
     this.objects.sort((a, b) => (a.z ?? 0) - (b.z ?? 0)); // Sort by z-depth
     for (const obj of this.objects) {
@@ -190,7 +188,7 @@ export class Scene {
       // --- UI layer (also zoomed, but no camera translation) ---
     for (const obj of this.uiObjects) {
       if (obj.draw) {
-        obj.draw(ctx, worldScale, this); // 👈 use worldScale here
+        obj.draw(ctx, scale, this);
       }
     }
   }

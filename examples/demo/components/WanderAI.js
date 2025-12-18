@@ -9,8 +9,9 @@ export class WanderAI extends Component {
     this.bounds = bounds; // { xMin, xMax }
     this.clickMover = clickMover;
 
-    this.mode = "idle";
+    this.mode = "idle"; // "idle" | "walk"
     this.timeLeft = 0;
+
     this.dir = { x: 0, y: 0 };
   }
 
@@ -45,8 +46,10 @@ export class WanderAI extends Component {
   }
 
   update(dt) {
+    // Let click-to-move take control (wander pauses)
     if (this.clickMover?.active) return;
 
+    // Freeze in action states
     if (this.sm && !this.sm.canMove()) {
       this.sm.setMoving(false);
       return;
@@ -54,24 +57,30 @@ export class WanderAI extends Component {
 
     const e = this.entity;
 
+    // bootstrap / flip state when timer runs out
     if (this.timeLeft <= 0) {
       this.mode === "idle" ? this.enterWalk() : this.enterIdle();
     }
 
     this.timeLeft -= dt;
+
     if (this.mode !== "walk") return;
 
     const s = dt / 1000;
+
+    // Simple dt-based movement (no snapping / no accumulators)
     e.x += this.dir.x * this.speed * s;
-    e.x = Math.round(e.x);
 
     if (this.dir.x !== 0) e.facing = this.dir.x < 0 ? -1 : 1;
 
     this.clampToBounds(e);
 
+    // If we hit a wall, go idle so it doesn't scrape edges
     if (this.bounds) {
       const hitX = e.x === this.bounds.xMin || e.x === this.bounds.xMax;
       if (hitX) this.enterIdle();
     }
+
+    this.sm?.setMoving(true);
   }
 }
