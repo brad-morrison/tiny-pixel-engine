@@ -82,6 +82,7 @@ export class Scene {
     // Camera translation in worldScale
     ctx.translate(-this.camera.x * worldScale, -this.camera.y * worldScale);
 
+    this.objects.sort((a, b) => (a.z ?? 0) - (b.z ?? 0)); // Sort by z-depth
     for (const obj of this.objects) {
       if (obj.draw) {
         obj.draw(ctx, worldScale, this);  // 👈 pass worldScale here

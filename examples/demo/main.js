@@ -45,7 +45,7 @@ const moveInput = (k) => {
 
   return {
     x: (right ? 1 : 0) - (left ? 1 : 0),
-    y: (down ? 1 : 0) - (up ? 1 : 0),
+    y: (down ? 0 : 0) - (up ? 0 : 0), // I have disabled vertical movement, to re-add - (down ? 1 : 0) - (up ? 1 : 0) 
   };
 };
 
@@ -169,7 +169,7 @@ class PetSM extends Component {
 
     // 2) Auto-sleep (only when idle and no manual requests)
     if (this.state === "idle" && e <= this.sleepT) {
-      this.setState("sleep");
+      //this.setState("sleep");
       return;
     }
 
@@ -299,15 +299,17 @@ const makeLoop = (
     loop: true,
   });
 
-const makePet = ({ x = 40, y = 40 } = {}) => {
+const makePet = ({ x = 40, y = 40, z = 1 } = {}) => {
   const { idleImg, walkImg, musicImg, sleepImg, eatImg } = getAsset("pet");
 
   const pet = new GameObject({
     name: "Pet",
     x,
     y,
+    z,
     originX: 8,
     originY: 8,
+    originZ: 0,
   });
 
   const idle = makeLoop(makeSheet(idleImg), 140);
@@ -439,7 +441,7 @@ class Demo extends Scene {
     super();
     this.camera.zoom = 1.5;
 
-    const { pet, anim } = makePet({ x: 40, y: 40 });
+    const { pet, anim } = makePet({ x: 40, y: 40, z: 1 });
 
     const needs = pet.addComponent(new Needs());
     const sm = pet.addComponent(new PetSM(needs, anim, 0, 80));
@@ -450,9 +452,9 @@ class Demo extends Scene {
     this.addObject(pet);
     this.setCameraTarget(pet);
 
-    this.addObject(makeTree({ x: 60, y: 0 }));
-    this.addObject(makeTree({ x: 100, y: 0 }));
-    this.addObject(makeTree({ x: 140, y: 0 }));
+    this.addObject(makeTree({ x: 60, y: 45 }));
+    this.addObject(makeTree({ x: 100, y: 45 }));
+    this.addObject(makeTree({ x: 140, y: 45 }));
 
     this.addUIObject(statusPanel(needs));
   }

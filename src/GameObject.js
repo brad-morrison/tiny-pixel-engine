@@ -5,16 +5,20 @@ export class GameObject {
     name = "GameObject",
     x = 0,
     y = 0,
+    z = 0,
     originX = 0,
     originY = 0,
+    originZ = 0,
   } = {}) {
     this.name = name;
     this.x = x;
     this.y = y;
+    this.z = z;
 
     // NEW: origin in sprite pixels (virtual units)
     this.originX = originX;
     this.originY = originY;
+    this.originZ = originZ;
 
     this.active = true;
     this.components = [];
