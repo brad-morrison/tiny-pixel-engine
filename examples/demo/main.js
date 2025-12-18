@@ -60,26 +60,112 @@ const normalize = (x, y) => {
  */
 
 class Needs extends Component {
-  constructor({ h = 20, e = 80, b = 10, hr = 2, er = -1, br = 1.5 } = {}) {
-    super();
-    this.hunger = h;
-    this.energy = e;
-    this.boredom = b;
+  constructor({
+    maxBlocks = 10,
 
-    this.hungerRate = hr;
-    this.energyRate = er;
-    this.boredomRate = br;
+    hungerLoseEverySec = 5,
+    energyLoseEverySec = 5,
+    happinessLoseEverySec = 5,
+
+    energyGainEverySecWhileSleeping = 1,
+    happinessGainEverySecWhileMusic = 1,
+  } = {}) {
+    super();
+
+    this.maxBlocks = maxBlocks;
+
+    // Current values (higher = better)
+    this.hunger = maxBlocks;
+    this.energy = maxBlocks;
+    this.happiness = maxBlocks;
+
+    // Activity flags set by your state machine
+    this.isSleeping = false;
+    this.isListening = false;
+
+    // intervals
+    this.hungerLoseEverySec = hungerLoseEverySec;
+    this.energyLoseEverySec = energyLoseEverySec;
+    this.happinessLoseEverySec = happinessLoseEverySec;
+
+    this.energyGainEverySecWhileSleeping = energyGainEverySecWhileSleeping;
+    this.happinessGainEverySecWhileMusic = happinessGainEverySecWhileMusic;
+
+    // timers (accumulators)
+    this._hungerLoseT = 0;
+    this._energyLoseT = 0;
+    this._happinessLoseT = 0;
+
+    this._energyGainT = 0;
+    this._happinessGainT = 0;
   }
 
-  feed(amount = 10) {
-    this.hunger = clamp100(this.hunger - amount);
+  clampBlocks(v) {
+    return Math.max(0, Math.min(this.maxBlocks, v));
+  }
+
+  // Called by SM
+  setSleeping(on) {
+    this.isSleeping = !!on;
+    if (!on) this._energyGainT = 0;
+  }
+
+  setListening(on) {
+    this.isListening = !!on;
+    if (!on) this._happinessGainT = 0;
+  }
+
+  // Called by Actions on eat
+  eat(blocks = 1) {
+    this.hunger = this.clampBlocks(this.hunger + blocks);
+  }
+
+  loseBlock(which) {
+    this[which] = this.clampBlocks(this[which] - 1);
+  }
+
+  gainBlock(which) {
+    this[which] = this.clampBlocks(this[which] + 1);
   }
 
   update(dt) {
-    const s = seconds(dt);
-    this.hunger = clamp100(this.hunger + this.hungerRate * s);
-    this.energy = clamp100(this.energy + this.energyRate * s);
-    this.boredom = clamp100(this.boredom + this.boredomRate * s);
+    const s = dt / 1000;
+
+    // --------- baseline decay (always) ----------
+    this._hungerLoseT += s;
+    while (this._hungerLoseT >= this.hungerLoseEverySec) {
+      this._hungerLoseT -= this.hungerLoseEverySec;
+      this.loseBlock("hunger");
+    }
+
+    this._energyLoseT += s;
+    while (this._energyLoseT >= this.energyLoseEverySec) {
+      this._energyLoseT -= this.energyLoseEverySec;
+      this.loseBlock("energy");
+    }
+
+    this._happinessLoseT += s;
+    while (this._happinessLoseT >= this.happinessLoseEverySec) {
+      this._happinessLoseT -= this.happinessLoseEverySec;
+      this.loseBlock("happiness");
+    }
+
+    // --------- conditional regen ----------
+    if (this.isSleeping) {
+      this._energyGainT += s;
+      while (this._energyGainT >= this.energyGainEverySecWhileSleeping) {
+        this._energyGainT -= this.energyGainEverySecWhileSleeping;
+        this.gainBlock("energy");
+      }
+    }
+
+    if (this.isListening) {
+      this._happinessGainT += s;
+      while (this._happinessGainT >= this.happinessGainEverySecWhileMusic) {
+        this._happinessGainT -= this.happinessGainEverySecWhileMusic;
+        this.gainBlock("happiness");
+      }
+    }
   }
 }
 
@@ -120,6 +206,8 @@ class PetSM extends Component {
   setState(next) {
     if (this.state === next) return;
     this.state = next;
+    this.needs.setSleeping(next === "sleep");
+    this.needs.setListening(next === "music");
 
     // defaults
     this.needs.boredomRate = 1.5;
@@ -303,7 +391,6 @@ class Actions extends Component {
     this.anim = anim; // only used to check if eat animation exists + timing
     this.needs = needs;
     this.sm = sm;
-    this.eatAmount = eatAmount;
 
     this.keyboard = new Keyboard();
 
@@ -355,7 +442,7 @@ class Actions extends Component {
     if (this.timeLeft > 0) return;
 
     this.isEating = false;
-    this.needs.feed(this.eatAmount);
+    this.needs.eat(1);
     this.sm.request(null);
   }
 }
@@ -467,9 +554,9 @@ const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
     getAsset("petStatusUi");
 
   const bars = [
-    { icon: hungerIconImage, get: () => 100 - needs.hunger, yOffset: 0 },
+    { icon: hungerIconImage, get: () => needs.hunger, yOffset: 0 },
     { icon: energyIconImage, get: () => needs.energy, yOffset: spacing },
-    { icon: funIconImage, get: () => needs.boredom, yOffset: spacing * 2 },
+    { icon: funIconImage, get: () => needs.happiness, yOffset: spacing * 2 },
   ];
 
   // Frame internals (virtual pixels inside the UI frame)
@@ -480,7 +567,7 @@ const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
   const blockH = blockImage.height;
   const blockStep = blockW;
 
-  const maxBlocks = Math.floor((frameImage.width - innerX * 2) / blockW);
+  const maxBlocks = needs.maxBlocks;
   const gap = 1; // icon -> frame gap in virtual px
 
   const drawBar = (ctx, scale, { icon, get, yOffset }) => {
@@ -496,7 +583,7 @@ const statusPanel = (needs, { x = 8, y = 4, spacing = 10 } = {}) => {
     ctx.drawImage(frameImage, fx, fy, frameImage.width * scale, frameImage.height * scale);
 
     // blocks
-    const filled = Math.round(maxBlocks * clamp01(get() / 100));
+    const filled = Math.max(0, Math.min(maxBlocks, Math.round(get())));
     for (let i = 0; i < filled; i++) {
       const bx = (x + (icon.width + gap) + innerX + i * blockStep) * scale;
       const by = (y + yOffset + innerY) * scale;
@@ -524,7 +611,7 @@ class Demo extends Scene {
 
     const { pet, anim } = makePet({ x: 40, y: 40, z: 1 });
 
-    const needs = pet.addComponent(new Needs());
+    const needs = pet.addComponent(new Needs({ maxBlocks: 7 }));
     const sm = pet.addComponent(new PetSM(needs, anim, 0, 80));
 
     //pet.addComponent(new Player(40, sm));
